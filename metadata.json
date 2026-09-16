@@ -1,0 +1,6 @@
+{
+  "name": "SmileCare Dental Clinic",
+  "description": "Modern, professional dental clinic website for SmileCare Dental Clinic in Bengaluru, Karnataka, featuring comprehensive treatments, specialist dentists, and online appointment booking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
