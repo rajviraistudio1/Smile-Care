@@ -14,10 +14,13 @@ import {
   Send,
   Navigation,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { PageId, AppointmentFormState, SubmittedAppointment } from '../../types';
 import { CLINIC_INFO, DENTISTS, TREATMENTS } from '../../data/clinicData';
+import { insertAppointment, isSupabaseConfigured } from '../../lib/supabase';
 
 interface AppointmentPageProps {
   initialTreatment?: string;
@@ -38,6 +41,8 @@ export const AppointmentPage: React.FC<AppointmentPageProps> = ({ initialTreatme
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<SubmittedAppointment | null>(null);
+  const [dbSaved, setDbSaved] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Sync initialTreatment if passed dynamically
@@ -70,26 +75,40 @@ export const AppointmentPage: React.FC<AppointmentPageProps> = ({ initialTreatme
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
     setIsSubmitting(true);
-    // Realistic simulation of frontend processing
-    setTimeout(() => {
-      const refId = 'SC-' + Math.floor(100000 + Math.random() * 900000);
-      setSubmittedData({
-        ...formData,
-        referenceId: refId,
-        submittedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      });
+    setServerError(null);
+
+    const refId = 'SC-' + Math.floor(100000 + Math.random() * 900000);
+    const appointmentRecord: SubmittedAppointment = {
+      ...formData,
+      referenceId: refId,
+      submittedAt: new Date().toISOString()
+    };
+
+    // Insert into Supabase
+    const result = await insertAppointment(appointmentRecord);
+
+    if (result.success) {
+      setSubmittedData(appointmentRecord);
+      setDbSaved(!result.isLocalFallback);
       setIsSubmitting(false);
       window.scrollTo({ top: 150, behavior: 'smooth' });
-    }, 600);
+    } else {
+      setIsSubmitting(false);
+      setServerError(
+        result.error || 'Failed to record appointment in database. Please check your network or call our reception.'
+      );
+    }
   };
 
   const handleReset = () => {
     setSubmittedData(null);
+    setServerError(null);
+    setDbSaved(false);
     setFormData({
       fullName: '',
       phone: '',
@@ -135,9 +154,17 @@ export const AppointmentPage: React.FC<AppointmentPageProps> = ({ initialTreatme
                 </div>
 
                 <div className="space-y-2">
-                  <span className="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded">
-                    Request Received Successfully
-                  </span>
+                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <span className="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded">
+                      Request Received Successfully
+                    </span>
+                    {dbSaved && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        <Database className="w-3 h-3 text-emerald-600" />
+                        Saved in Clinic Database
+                      </span>
+                    )}
+                  </div>
                   <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-display">
                     Thank you, {submittedData.fullName}!
                   </h2>
@@ -404,6 +431,23 @@ export const AppointmentPage: React.FC<AppointmentPageProps> = ({ initialTreatme
                     className="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all focus:bg-white"
                   />
                 </div>
+
+                {/* Server Error Alert */}
+                {serverError && (
+                  <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs sm:text-sm flex items-start gap-3 animate-in fade-in">
+                    <AlertCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold">Unable to process appointment online</p>
+                      <p className="text-rose-700/90 leading-relaxed">{serverError}</p>
+                      <p className="pt-1 text-[11px] text-rose-600">
+                        You can also book directly by calling us at{' '}
+                        <a href={`tel:${CLINIC_INFO.phoneMobile}`} className="font-bold underline">
+                          {CLINIC_INFO.phoneMobile}
+                        </a>.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Submit Button */}
                 <button
