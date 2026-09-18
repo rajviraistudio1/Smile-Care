@@ -1,4 +1,6 @@
-export type PageId = 'home' | 'about' | 'treatments' | 'appointment' | 'faq';
+export type PageId = 'home' | 'about' | 'treatments' | 'appointment' | 'faq' | 'admin';
+
+export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
 export interface Treatment {
   id: string;
@@ -57,4 +59,25 @@ export interface AppointmentFormState {
 export interface SubmittedAppointment extends AppointmentFormState {
   referenceId: string;
   submittedAt: string;
+}
+
+export interface DatabaseAppointment {
+  id: string;
+  reference_id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  preferred_date: string;
+  preferred_time_slot: string;
+  treatment: string;
+  dentist_preference: string | null;
+  message: string | null;
+  status: AppointmentStatus;
+  created_at: string;
+}
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  role?: string;
 }

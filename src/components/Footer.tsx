@@ -220,12 +220,21 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
 
         </div>
 
-        {/* Bottom Bar: Copyright and Location Tag */}
+        {/* Bottom Bar: Copyright, Location Tag and Staff Portal Access */}
         <div className="mt-12 pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <p>© {new Date().getFullYear()} {CLINIC_INFO.name}. All rights reserved.</p>
-          <p className="flex items-center gap-1.5">
-            <span>Serving patients across Indiranagar, Koramangala, Whitefield & Bengaluru</span>
-          </p>
+          <div className="flex items-center gap-4 flex-wrap justify-center">
+            <span>Serving patients across Indiranagar, Koramangala & Bengaluru</span>
+            <span className="text-slate-700">|</span>
+            <button
+              onClick={() => handleNav('admin')}
+              id="footer-staff-admin-link"
+              className="text-slate-400 hover:text-teal-400 transition-colors inline-flex items-center gap-1 cursor-pointer font-medium"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-teal-500" />
+              <span>Staff Admin Portal</span>
+            </button>
+          </div>
         </div>
       </div>
     </footer>
